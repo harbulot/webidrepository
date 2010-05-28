@@ -1,0 +1,69 @@
+<#import "corelayout.ftl.html" as layout><html>
+<@layout.head "FOAF profile">
+<script type="text/javascript" src="../htdocs/crosskeygen.js">/**/</script>
+<script type="text/javascript">
+$(document).ready(function() {
+	configurePage();
+});
+</script>
+</@layout.head>
+<@layout.body>
+<h1>${foaf.givenName!} ${foaf.familyName!}</h1>
+<h3>WebID: ${foaf.webid!}</h3>
+<span typeof="foaf:PersonalProfileDocument" about="" />
+<form>
+<table about="#me" typeof="foaf:Person">
+	<tr>
+		<th>Given name:</th>
+		<td property="foaf:givenName"><#if canModify>
+				<input type="text" name="givenName" value="${foaf.givenName!}" />
+			<#else>${foaf.givenName!}</#if></td>
+	</tr>
+	<tr>
+		<th>Family name:</th>
+		<td property="foaf:familyName"><#if canModify>
+				<input type="text" name="familyName" value="${foaf.familyName!}" />
+			<#else>${foaf.familyName!}</#if></td>
+		</td>
+	</tr>
+</table>
+</form>
+<#if foaf.x509Cert??>
+The following links will give you access to the certificate associated with this WebID in 
+<a href="certificate.crt">PEM format (text)</a> or <a href="certificate.cer">DER format (binary)</a>.
+<#else>
+<h2>This WebID hasn't been secured yet.</h2>
+<p>Please use the following form to create a certificate for you to claim this WebID.
+This will create a key-pair within your browser and import a certificate for this WebID.</p>
+<div id="iehelptext" style="display: none;">
+<p>Using Internet Explorer under Windows Vista or above or Windows
+Server 2008, you need to configure the following for this to work:</p>
+<ul>
+	<li>Add this site to the <i>Trusted Sites</i> list: in Internet
+	Options -&gt; Security -&gt; Trusted Sites -&gt; Sites -&gt; Add ...</li>
+	<li>You may need to configure the trust level (in this tab), using
+	<i>Custom Level...</i>: enable <i>Initialize and script ActiveX
+	controls not marked as safe for scripting</i>.</li>
+</ul>
+</div>
+<p>Most browsers use the Common Name entry in the certificate to present them in your list of
+certificates. For the purpose of secure WebIDs, this is purely informative, but this will help
+you find this certificate if you have more than one in your list. Spaces are allowed,
+please avoid slashes or commas.</p>
+<form id="keygenform" method="post">
+<table>
+	<tr>
+		<td>Common Name:</td>
+		<td><input name="cn" id="cn" type="text"
+			value="${foaf.givenName!} ${foaf.familyName!}" /></td>
+	</tr>
+	<tr>
+		<td>Key strength:</td>
+		<td id="keystrenghtd"><keygen id="spkac" name="spkac"
+			challenge="TheChallenge1" /></td>
+	</tr>
+</table>
+<input id="keygensubmit" type="submit" /></form>
+</#if>
+</@layout.body>
+</html>

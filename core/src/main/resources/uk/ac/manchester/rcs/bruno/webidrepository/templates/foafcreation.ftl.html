@@ -1,0 +1,25 @@
+<#import "corelayout.ftl.html" as layout><html>
+<@layout.head "FOAF profiles">
+</@layout.head>
+<@layout.body>
+<p>
+You can create a new FOAF profile using this form. This is the first step required for
+you to get a secure WebID.
+</p>
+<p>
+All fields are optional.
+</p>
+<form method="post">
+<table>
+	<tr>
+		<th>Given Name (First Name):</th>
+		<td><input type="text" name="givenName" /></td>
+	</tr>
+	<tr>
+		<th>Family (Last Name):</th>
+		<td><input type="text" name="familyName" /></td>
+	</tr>
+</table>
+<input type="submit" /></form>
+</@layout.body>
+</html>

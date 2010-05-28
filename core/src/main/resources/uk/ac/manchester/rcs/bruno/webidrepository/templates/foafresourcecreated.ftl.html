@@ -1,0 +1,9 @@
+<#import "corelayout.ftl.html" as layout><html>
+<@layout.head "Redirection">
+<meta http-equiv="REFRESH" content="0;url=${redirect_url}">
+</@layout.head>
+<@layout.body>
+If your browser doesn't redirect you automatically, please click on
+<a href="${redirect_url}">this link</a>.
+</@layout.body>
+</html>
