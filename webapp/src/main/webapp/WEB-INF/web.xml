@@ -3,7 +3,7 @@
 	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	id="WebApp_ID" version="2.5">
-	<display-name>project233-webapp</display-name>
+	<display-name>webidrepository-webapp</display-name>
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
 		<welcome-file>index.htm</welcome-file>
@@ -32,11 +32,27 @@
 
 		<init-param>
 			<param-name>corypha_modules</param-name>
-			<param-value>uk.ac.manchester.rcs.bruno.project233.WebidModule</param-value>
+			<param-value>uk.ac.manchester.rcs.bruno.webidrepository.WebidModule</param-value>
 		</init-param>
 		<init-param>
 			<param-name>corypha_config_ini_url</param-name>
 			<param-value>war:///WEB-INF/corypha.ini</param-value>
+		</init-param>
+		<init-param>
+			<param-name>oracle_jdbc_url</param-name>
+			<param-value>jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oracle.vidar.ngs.manchester.ac.uk)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=sand)))</param-value>
+		</init-param>
+		<init-param>
+			<param-name>oracle_jdbc_user</param-name>
+			<param-value>nanocmos_exp2</param-value>
+		</init-param>
+		<init-param>
+			<param-name>oracle_jdbc_password</param-name>
+			<param-value>bruno</param-value>
+		</init-param>
+		<init-param>
+			<param-name>oracle_jdbc_model</param-name>
+			<param-value>test_foafssl</param-value>
 		</init-param>
 	</servlet>
 

@@ -196,8 +196,10 @@
 			<url>http://repo.aduna-software.org/maven2/releases</url>
 		</repository>
 	</repositories>
+	
 	<modules>
 		<module>core</module>
+		<module>oraclesail</module>
 		<module>webapp</module>
 	</modules>
 

@@ -31,6 +31,7 @@ POSSIBILITY OF SUCH DAMAGE.
 package uk.ac.manchester.rcs.bruno.webidrepository;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,6 +48,8 @@ import org.restlet.Restlet;
 import org.restlet.data.MediaType;
 import org.restlet.resource.Directory;
 import org.restlet.routing.Router;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.ac.manchester.rcs.bruno.keygenapp.base.MiniCaConfiguration;
 import uk.ac.manchester.rcs.bruno.keygenapp.base.MiniCaConfiguration.ConfigurationException;
@@ -64,6 +67,9 @@ import freemarker.template.Configuration;
  */
 public class WebidModule extends CoryphaModule implements IApplicationProvider,
         IMenuProvider {
+    private final static Logger LOGGER = LoggerFactory
+            .getLogger(WebidModule.class);
+
     static {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
             Security.addProvider(new BouncyCastleProvider());
@@ -106,14 +112,36 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
                 getContext().getAttributes().put(
                         MINICA_CONFIGURATION_CTXATTR_NAME, miniCaConfiguration);
 
-                Sail sail;
-                String memoryStoreFile = getContext().getParameters()
-                        .getFirstValue(SESAME_MEMORYSTORE_DIR_CTXPARAM_NAME);
-                if (memoryStoreFile != null) {
-                    File dataDir = new File(memoryStoreFile);
-                    sail = new MemoryStore(dataDir);
-                } else {
-                    sail = new MemoryStore();
+                Sail sail = null;
+                try {
+                    String jdbcUrl = getContext().getParameters()
+                            .getFirstValue("oracle_jdbc_url");
+                    String user = getContext().getParameters().getFirstValue(
+                            "oracle_jdbc_user");
+                    String password = getContext().getParameters()
+                            .getFirstValue("oracle_jdbc_password");
+                    String model = getContext().getParameters().getFirstValue(
+                            "oracle_jdbc_model");
+                    Class<?> oracleSailClass = Class
+                            .forName("uk.ac.manchester.rcs.bruno.webidrepository.oraclesail.OracleSailLoader");
+                    Method sailLoaderMethod = oracleSailClass.getMethod(
+                            "loadSail", String.class, String.class,
+                            String.class, String.class);
+                    sail = (Sail) sailLoaderMethod.invoke(null, jdbcUrl, user,
+                            password, model);
+                } catch (Exception e) {
+                    LOGGER.error("Unable to load Oracle Sail.", e);
+                }
+                if (sail == null) {
+                    String memoryStoreFile = getContext()
+                            .getParameters()
+                            .getFirstValue(SESAME_MEMORYSTORE_DIR_CTXPARAM_NAME);
+                    if (memoryStoreFile != null) {
+                        File dataDir = new File(memoryStoreFile);
+                        sail = new MemoryStore(dataDir);
+                    } else {
+                        sail = new MemoryStore();
+                    }
                 }
                 Repository repository = new SailRepository(sail);
                 repository.initialize();
