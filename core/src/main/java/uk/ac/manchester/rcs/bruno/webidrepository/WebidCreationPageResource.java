@@ -127,6 +127,7 @@ public class WebidCreationPageResource extends ServerResource {
                     value = vf.createLiteral(familyName);
                     conn.add(subject, predicate, value, context);
                 }
+                conn.commit();
             } finally {
                 conn.close();
             }

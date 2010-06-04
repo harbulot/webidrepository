@@ -17,10 +17,10 @@
 		<param-name>org.restlet.clients</param-name>
 		<param-value>HTTP HTTPS CLAP FILE</param-value>
 	</context-param>
+
 	<servlet>
 		<servlet-name>FoafDirectoryService</servlet-name>
 		<servlet-class>org.restlet.ext.servlet.ServerServlet</servlet-class>
-
 		<init-param>
 			<param-name>org.restlet.application</param-name>
 			<param-value>uk.ac.manchester.rcs.corypha.core.CoryphaRootApplication</param-value>
@@ -38,23 +38,27 @@
 			<param-name>corypha_config_ini_url</param-name>
 			<param-value>war:///WEB-INF/corypha.ini</param-value>
 		</init-param>
+		<!--  
 		<init-param>
-			<param-name>oracle_jdbc_url</param-name>
-			<param-value>jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oracle.vidar.ngs.manchester.ac.uk)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=sand)))</param-value>
+			<param-name>sail_loader</param-name>
+			<param-value>uk.ac.manchester.rcs.bruno.webidrepository.oraclesail.OracleSailLoader</param-value>
 		</init-param>
 		<init-param>
-			<param-name>oracle_jdbc_user</param-name>
-			<param-value>nanocmos_exp2</param-value>
+			<param-name>oracle_sail_datasource</param-name>
+			<param-value>jdbc/oracle_sail_datasource</param-value>
 		</init-param>
 		<init-param>
-			<param-name>oracle_jdbc_password</param-name>
-			<param-value>bruno</param-value>
-		</init-param>
-		<init-param>
-			<param-name>oracle_jdbc_model</param-name>
+			<param-name>oracle_sail_model</param-name>
 			<param-value>test_foafssl</param-value>
-		</init-param>
+		</init-param>-->
 	</servlet>
+
+	<resource-ref>
+		<description>Oracle Sail DataSource</description>
+		<res-ref-name>jdbc/oracle_sail_datasource</res-ref-name>
+		<res-type>javax.sql.DataSource</res-type>
+		<res-auth>Container</res-auth>
+	</resource-ref>
 
 	<servlet-mapping>
 		<servlet-name>FoafDirectoryService</servlet-name>

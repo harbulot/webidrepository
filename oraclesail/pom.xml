@@ -17,6 +17,16 @@
 	</properties>
 
 	<dependencies>
+		<!-- WedID Repository -->
+		<dependency>
+			<groupId>uk.ac.manchester.rcs.bruno.webidrepository</groupId>
+			<artifactId>webidrepository-core</artifactId>
+		</dependency>
+		<!-- Restlet modules -->
+		<dependency>
+			<groupId>org.restlet.jse</groupId>
+			<artifactId>org.restlet</artifactId>
+		</dependency>
 		<!-- OpenRDF/Sesame -->
 		<dependency>
 			<groupId>org.openrdf.sesame</groupId>
@@ -32,10 +42,12 @@
 			<artifactId>oracle.spatial.rdf.client.sesame</artifactId>
 			<version>11.2</version>
 		</dependency>
+		<!--  - ->
 		<dependency>
 			<groupId>manually-packaged</groupId>
 			<artifactId>oracle.jdbc6</artifactId>
 			<version>11.2.0.1.0</version>
 		</dependency>
+		<!- -  -->
 	</dependencies>
 </project>

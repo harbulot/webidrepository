@@ -31,12 +31,10 @@ POSSIBILITY OF SUCH DAMAGE.
 package uk.ac.manchester.rcs.bruno.webidrepository;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.openrdf.repository.Repository;
@@ -107,32 +105,29 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
                 getTunnelService().setExtensionsTunnel(true);
 
                 MiniCaConfiguration miniCaConfiguration = new MiniCaConfiguration();
-                miniCaConfiguration.init(new Properties());
+                miniCaConfiguration.init(getContext());
 
                 getContext().getAttributes().put(
                         MINICA_CONFIGURATION_CTXATTR_NAME, miniCaConfiguration);
 
                 Sail sail = null;
-                try {
-                    String jdbcUrl = getContext().getParameters()
-                            .getFirstValue("oracle_jdbc_url");
-                    String user = getContext().getParameters().getFirstValue(
-                            "oracle_jdbc_user");
-                    String password = getContext().getParameters()
-                            .getFirstValue("oracle_jdbc_password");
-                    String model = getContext().getParameters().getFirstValue(
-                            "oracle_jdbc_model");
-                    Class<?> oracleSailClass = Class
-                            .forName("uk.ac.manchester.rcs.bruno.webidrepository.oraclesail.OracleSailLoader");
-                    Method sailLoaderMethod = oracleSailClass.getMethod(
-                            "loadSail", String.class, String.class,
-                            String.class, String.class);
-                    sail = (Sail) sailLoaderMethod.invoke(null, jdbcUrl, user,
-                            password, model);
-                } catch (Exception e) {
-                    LOGGER.error("Unable to load Oracle Sail.", e);
-                }
-                if (sail == null) {
+                String sailLoaderName = getContext().getParameters()
+                        .getFirstValue("sail_loader");
+                if (sailLoaderName != null) {
+                    try {
+                        Class<?> oracleSailLoaderClass = Class
+                                .forName(sailLoaderName);
+                        SailLoader sailLoader = (SailLoader) oracleSailLoaderClass
+                                .newInstance();
+                        sail = sailLoader.loadSail(getContext());
+                    } catch (Exception e) {
+                        String errorMsg = String
+                                .format("Unable to load SailLoader %s.",
+                                        sailLoaderName);
+                        LOGGER.error(errorMsg, e);
+                        throw new RuntimeException(errorMsg, e);
+                    }
+                } else {
                     String memoryStoreFile = getContext()
                             .getParameters()
                             .getFirstValue(SESAME_MEMORYSTORE_DIR_CTXPARAM_NAME);

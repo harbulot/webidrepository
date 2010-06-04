@@ -10,6 +10,7 @@
 		<restlet.version>2.0-RC3</restlet.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<sesame.version>2.3.1</sesame.version>
+		<webidrepository.version>0.0.1-SNAPSHOT</webidrepository.version>
 	</properties>
 
 	<profiles>
@@ -196,7 +197,7 @@
 			<url>http://repo.aduna-software.org/maven2/releases</url>
 		</repository>
 	</repositories>
-	
+
 	<modules>
 		<module>core</module>
 		<module>oraclesail</module>
@@ -209,6 +210,13 @@
 				<groupId>uk.ac.manchester.rcs.corypha</groupId>
 				<artifactId>corypha-core</artifactId>
 				<version>0.0.1-SNAPSHOT</version>
+			</dependency>
+
+			<!-- WedID Repository -->
+			<dependency>
+				<groupId>uk.ac.manchester.rcs.bruno.webidrepository</groupId>
+				<artifactId>webidrepository-core</artifactId>
+				<version>${webidrepository.version}</version>
 			</dependency>
 
 			<!-- Restlet modules -->

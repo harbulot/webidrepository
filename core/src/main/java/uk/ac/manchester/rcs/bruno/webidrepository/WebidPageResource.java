@@ -107,23 +107,30 @@ public class WebidPageResource extends SesameContextDocumentResource {
         final RepositoryConnection repositoryConnection = this.repositoryConnection;
 
         StringBuilder queryStringBuilder = new StringBuilder();
-        queryStringBuilder.append("SELECT * ");
-        queryStringBuilder.append(String.format("FROM CONTEXT <%s> ", context));
-        queryStringBuilder.append(String.format(
-                " {<%s#me>} rdf:type {foaf:Person}, ", context));
-        queryStringBuilder.append(String.format(
-                " [{<%s#me>} foaf:givenName {givenName}], ", context));
-        queryStringBuilder.append(String.format(
-                " [{<%s#me>} foaf:familyName {familyName}], ", context));
-        queryStringBuilder.append(String.format(
-                " [{<%s#me>} man:x509PemCert {x509Cert}] ", context));
-        queryStringBuilder.append(String.format(
-                "USING NAMESPACE foaf = <%s>, man = <%s>", WebidModule.FOAF_NS,
+        queryStringBuilder.append(String.format("PREFIX rdf: <%s> ",
+                RDF.NAMESPACE));
+        queryStringBuilder.append(String.format("PREFIX foaf: <%s> ",
+                WebidModule.FOAF_NS));
+        queryStringBuilder.append(String.format("PREFIX man: <%s> ",
                 WebidModule.FOAFSSLMANCHESTER_NS));
+        queryStringBuilder.append("SELECT * ");
+        queryStringBuilder.append(String.format("FROM <%s> ", context));
+        queryStringBuilder.append("WHERE { ");
+        queryStringBuilder.append(String.format(
+                " <%s#me> rdf:type ?t . ", context));
+        queryStringBuilder.append(String.format(
+                " OPTIONAL { <%s#me> foaf:givenName ?givenName } . ", context));
+        queryStringBuilder
+                .append(String.format(
+                        " OPTIONAL { <%s#me> foaf:familyName ?familyName } . ",
+                        context));
+        queryStringBuilder.append(String.format(
+                " OPTIONAL { <%s#me> man:x509PemCert ?x509Cert } . ", context));
+        queryStringBuilder.append("} ");
         try {
             try {
                 TupleQuery tupleQuery = repositoryConnection.prepareTupleQuery(
-                        QueryLanguage.SERQL, queryStringBuilder.toString(),
+                        QueryLanguage.SPARQL, queryStringBuilder.toString(),
                         context.toString());
                 TupleQueryResult result = tupleQuery.evaluate();
                 if (result.hasNext()) {
@@ -133,6 +140,8 @@ public class WebidPageResource extends SesameContextDocumentResource {
                     Value x509Cert = bindingSet.getValue("x509Cert");
 
                     this.foafsslData = new HashMap<String, String>();
+                    LOGGER.info(String.format("%s: %s %s", webId, givenName,
+                            familyName));
                     this.foafsslData.put("webid", webId);
                     if (familyName != null) {
                         this.foafsslData.put("familyName", familyName
@@ -147,6 +156,7 @@ public class WebidPageResource extends SesameContextDocumentResource {
                                 .put("x509Cert", x509Cert.stringValue());
                     }
                 } else {
+                    LOGGER.info("No result");
                     setExisting(false);
                 }
             } finally {

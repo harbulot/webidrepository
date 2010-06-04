@@ -46,7 +46,6 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
-import java.util.Properties;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -69,30 +68,19 @@ public class MiniCaConfiguration {
     public static Logger LOG = Logger.getLogger(MiniCaConfiguration.class
             .getCanonicalName());
 
-    public final static String CERTIFICATE_JNDI_NAME = "foafdirectory/signingCertificate";
-    public final static String PRIVATEKEY_JNDI_NAME = "foafdirectory/signingPrivateKey";
+    public final static String CERTIFICATE_JNDI_NAME = "webiddirectory/signingCertificate";
+    public final static String PRIVATEKEY_JNDI_NAME = "webiddirectory/signingPrivateKey";
 
-    public final static String KEYSTORE_JNDI_NAME = "foafdirectory/signingKeyStore";
+    public final static String KEYSTORE_JNDI_NAME = "webiddirectory/signingKeyStore";
 
-    public final static String KEYSTOREPATH_JNDI_NAME = "foafdirectory/signingKeystorePath";
-    public final static String KEYSTORETYPE_JNDI_NAME = "foafdirectory/signingKeystoreType";
-    public final static String KEYSTOREPASSWORDARRAY_JNDI_NAME = "foafdirectory/signingKeystorePasswordArray";
-    public final static String KEYSTOREPASSWORD_JNDI_NAME = "foafdirectory/signingKeystorePassword";
+    public final static String KEYSTORE_RESOURCE_PATH_INITPARAM = "webiddirectory/signingKeystoreResourcePath";
+    public final static String KEYSTORE_PATH_INITPARAM = "webiddirectory/signingKeystorePath";
+    public final static String KEYSTORE_TYPE_INITPARAM = "webiddirectory/signingKeystoreType";
+    public final static String KEYSTORE_PASSWORD_INITPARAM = "webiddirectory/signingKeystorePassword";
+    public final static String KEY_PASSWORD_INITPARAM = "webiddirectory/signingKeyPassword";
+    public final static String ALIAS_INITPARAM = "webiddirectory/signingKeyAlias";
 
-    public final static String KEYPASSWORDARRAY_JNDI_NAME = "foafdirectory/signingKeyPasswordArray";
-    public final static String KEYPASSWORD_JNDI_NAME = "foafdirectory/signingKeyPassword";
-    public final static String KEYALIAS_JNDI_NAME = "foafdirectory/signingKeyAlias";
-
-    public final static String ISSUERNAME_JNDI_NAME = "foafdirectory/issuerName";
-
-    public final static String KEYSTORE_RESOURCE_PATH_INITPARAM = "keystoreResourcePath";
-    public final static String KEYSTORE_PATH_INITPARAM = "keystorePath";
-    public final static String KEYSTORE_TYPE_INITPARAM = "keystoreType";
-    public final static String KEYSTORE_PASSWORD_INITPARAM = "keystorePassword";
-    public final static String KEY_PASSWORD_INITPARAM = "keyPassword";
-    public final static String ALIAS_INITPARAM = "keyAlias";
-
-    public static final String ISSUER_NAME_INITPARAM = "issuerName";
+    public static final String ISSUER_NAME_INITPARAM = "webiddirectory/issuerName";
 
     private PrivateKey caPrivKey;
     private X509Certificate caCertificate;
@@ -144,34 +132,35 @@ public class MiniCaConfiguration {
      * Initialises the servlet: loads the keystore/keys to use to sign the
      * assertions and the issuer name.
      */
-    public void init(Properties initParameters) throws ConfigurationException {
+    public void init(org.restlet.Context context) throws ConfigurationException {
         KeyStore keyStore = null;
 
-        String keystoreResourcePath = initParameters
-                .getProperty(KEYSTORE_RESOURCE_PATH_INITPARAM);
-        String keystorePath = initParameters
-                .getProperty(KEYSTORE_PATH_INITPARAM);
-        String keystoreType = initParameters
-                .getProperty(KEYSTORE_TYPE_INITPARAM);
+        String keystoreResourcePath = context.getParameters().getFirstValue(
+                KEYSTORE_RESOURCE_PATH_INITPARAM);
+        String keystorePath = context.getParameters().getFirstValue(
+                KEYSTORE_PATH_INITPARAM);
+        String keystoreType = context.getParameters().getFirstValue(
+                KEYSTORE_TYPE_INITPARAM);
         char[] keystorePasswordArray = null;
         char[] keyPasswordArray = null;
         {
-            String keystorePassword = initParameters
-                    .getProperty(KEYSTORE_PASSWORD_INITPARAM);
+            String keystorePassword = context.getParameters().getFirstValue(
+                    KEYSTORE_PASSWORD_INITPARAM);
             if (keystorePassword != null) {
                 keystorePasswordArray = keystorePassword.toCharArray();
             }
-            String keyPassword = initParameters
-                    .getProperty(KEY_PASSWORD_INITPARAM);
+            String keyPassword = context.getParameters().getFirstValue(
+                    KEY_PASSWORD_INITPARAM);
             if (keyPassword != null) {
                 keyPasswordArray = keyPassword.toCharArray();
             } else {
                 keyPasswordArray = keystorePasswordArray;
             }
         }
-        String alias = initParameters.getProperty(ALIAS_INITPARAM);
+        String alias = context.getParameters().getFirstValue(ALIAS_INITPARAM);
 
-        String issuerName = initParameters.getProperty(ISSUER_NAME_INITPARAM);
+        String issuerName = context.getParameters().getFirstValue(
+                ISSUER_NAME_INITPARAM);
 
         X509Certificate certificate = null;
         PrivateKey privateKey = null;
@@ -198,89 +187,20 @@ public class MiniCaConfiguration {
                 } catch (NameNotFoundException e) {
                     LOG.log(Level.FINE, "JNDI name not found", e);
                 }
-
-                try {
-                    String jndiKeystorePath = (String) ctx
-                            .lookup(KEYSTOREPATH_JNDI_NAME);
-                    if (jndiKeystorePath != null) {
-                        keystorePath = jndiKeystorePath;
-                    }
-                } catch (NameNotFoundException e) {
-                    LOG.log(Level.FINE, "JNDI name not found", e);
-                }
-                try {
-                    String jndiKeystoreType = (String) ctx
-                            .lookup(KEYSTORETYPE_JNDI_NAME);
-                    if (jndiKeystoreType != null) {
-                        keystoreType = jndiKeystoreType;
-                    }
-                } catch (NameNotFoundException e) {
-                    LOG.log(Level.FINE, "JNDI name not found", e);
-                }
-
-                try {
-                    String jndiKeystorePassword = (String) ctx
-                            .lookup(KEYSTOREPASSWORD_JNDI_NAME);
-                    if (jndiKeystorePassword != null) {
-                        keystorePasswordArray = jndiKeystorePassword
-                                .toCharArray();
-                    }
-                } catch (NameNotFoundException e) {
-                }
-                try {
-                    char[] jndiKeystorePasswordArray = (char[]) ctx
-                            .lookup(KEYSTOREPASSWORDARRAY_JNDI_NAME);
-                    if (jndiKeystorePasswordArray != null) {
-                        keystorePasswordArray = jndiKeystorePasswordArray;
-                    }
-                } catch (NameNotFoundException e) {
-                    LOG.log(Level.FINE, "JNDI name not found", e);
-                }
-
-                try {
-                    String jndiKeyPassword = (String) ctx
-                            .lookup(KEYPASSWORD_JNDI_NAME);
-                    if (jndiKeyPassword != null) {
-                        keyPasswordArray = jndiKeyPassword.toCharArray();
-                    }
-                } catch (NameNotFoundException e) {
-                    LOG.log(Level.FINE, "JNDI name not found", e);
-                }
-                try {
-                    char[] jndiKeyPasswordArray = (char[]) ctx
-                            .lookup(KEYPASSWORDARRAY_JNDI_NAME);
-                    if (jndiKeyPasswordArray != null) {
-                        keyPasswordArray = jndiKeyPasswordArray;
-                    }
-                } catch (NameNotFoundException e) {
-                    LOG.log(Level.FINE, "JNDI name not found", e);
-                }
-
-                try {
-                    String jndiKeyAlias = (String) ctx
-                            .lookup(KEYALIAS_JNDI_NAME);
-                    if (jndiKeyAlias != null) {
-                        alias = jndiKeyAlias;
-                    }
-                } catch (NameNotFoundException e) {
-                    LOG.log(Level.FINE, "JNDI name not found", e);
-                }
-
-                try {
-                    String jndiIssuerName = (String) ctx
-                            .lookup(ISSUERNAME_JNDI_NAME);
-                    if (jndiIssuerName != null) {
-                        issuerName = jndiIssuerName;
-                    }
-                } catch (NameNotFoundException e) {
-                    LOG.log(Level.FINE, "JNDI name not found", e);
-                }
             } finally {
-                if (ctx != null) {
-                    ctx.close();
-                }
-                if (initCtx != null) {
-                    initCtx.close();
+                try {
+                    try {
+                        if (ctx != null) {
+                            ctx.close();
+                        }
+                    } finally {
+                        if (initCtx != null) {
+                            initCtx.close();
+                        }
+                    }
+                } catch (NamingException e) {
+                    LOG.log(Level.SEVERE, "Unable to close JNDI context.", e);
+                    throw new RuntimeException(e);
                 }
             }
         } catch (NameNotFoundException e) {
