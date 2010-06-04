@@ -30,11 +30,14 @@ POSSIBILITY OF SUCH DAMAGE.
 -----------------------------------------------------------------------*/
 package uk.ac.manchester.rcs.bruno.webidrepository;
 
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -43,6 +46,10 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.sail.SailRepository;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.rdfxml.RDFXMLWriter;
+import org.openrdf.sail.memory.MemoryStore;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
@@ -54,6 +61,7 @@ import org.restlet.resource.ResourceException;
 import org.restlet.resource.ServerResource;
 
 import uk.ac.manchester.rcs.corypha.core.CoryphaTemplateUtil;
+import uk.ac.manchester.rcs.corypha.core.HibernateFilter;
 
 /**
  * This is a resource class for the records.
@@ -101,13 +109,14 @@ public class WebidCreationPageResource extends ServerResource {
             String localId = UUID.randomUUID().toString() + "/";
 
             Repository repository = (Repository) getContext().getAttributes()
-                    .get(WebidModule.SESAME_REPOSITORY_CTXATTR_NAME);
-
+                    .get(WebidModule.FOAFDIRECTORY_SESAME_REPOSITORY_ATTRIBUTE);
             RepositoryConnection conn = repository.getConnection();
             try {
                 ValueFactory vf = conn.getValueFactory();
                 URI context = vf.createURI(getRequest().getResourceRef()
                         + "profile/", localId);
+
+                conn.clear(context);
 
                 Resource subject = vf.createURI(context.toString(), "#me");
 
@@ -128,20 +137,43 @@ public class WebidCreationPageResource extends ServerResource {
                     conn.add(subject, predicate, value, context);
                 }
                 conn.commit();
+
+                try {
+                    StringWriter sw = new StringWriter();
+                    RDFXMLWriter rdfXmlWriter = new RDFXMLWriter(sw);
+                    conn.export(rdfXmlWriter, context);
+                    RdfDocumentContainer rdfDocContainer = new RdfDocumentContainer();
+                    rdfDocContainer.setId(context.toString());
+                    rdfDocContainer.setRdfContent(sw.toString());
+                    Session session = HibernateFilter
+                            .getSession(
+                                    getContext(),
+                                    getRequest(),
+                                    true,
+                                    WebidModule.FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
+                                    WebidModule.FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE);
+                    session.saveOrUpdate(rdfDocContainer);
+                    session.getTransaction().commit();
+                } catch (RDFHandlerException e) {
+                    throw new ResourceException(e);
+                } catch (HibernateException e) {
+                    throw new ResourceException(e);
+                }
+
+                getResponse().redirectTemporary(context.toString());
+                getResponse().setStatus(Status.SUCCESS_CREATED);
+
+                HashMap<String, String> data = new HashMap<String, String>();
+                data.put("redirect_url", getRequest().getResourceRef()
+                        + "profile/" + localId);
+                return new TemplateRepresentation(
+                        "foafresourcecreated.ftl.html", CoryphaTemplateUtil
+                                .getConfiguration(getContext()), data,
+                        MediaType.TEXT_HTML);
             } finally {
                 conn.close();
+                repository.shutDown();
             }
-
-            getResponse().redirectTemporary(
-                    getRequest().getResourceRef() + "profile/" + localId);
-            getResponse().setStatus(Status.SUCCESS_CREATED);
-
-            HashMap<String, String> data = new HashMap<String, String>();
-            data.put("redirect_url", getRequest().getResourceRef() + "profile/"
-                    + localId);
-            return new TemplateRepresentation("foafresourcecreated.ftl.html",
-                    CoryphaTemplateUtil.getConfiguration(getContext()), data,
-                    MediaType.TEXT_HTML);
         } catch (RepositoryException e) {
             throw new ResourceException(e);
         }

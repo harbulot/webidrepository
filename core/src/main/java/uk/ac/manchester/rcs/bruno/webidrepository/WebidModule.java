@@ -30,17 +30,17 @@ POSSIBILITY OF SUCH DAMAGE.
 -----------------------------------------------------------------------*/
 package uk.ac.manchester.rcs.bruno.webidrepository;
 
-import java.io.File;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.AnnotationConfiguration;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.sail.SailRepository;
-import org.openrdf.sail.Sail;
 import org.openrdf.sail.memory.MemoryStore;
 import org.restlet.Restlet;
 import org.restlet.data.MediaType;
@@ -54,6 +54,7 @@ import uk.ac.manchester.rcs.bruno.keygenapp.base.MiniCaConfiguration.Configurati
 import uk.ac.manchester.rcs.corypha.core.CoryphaApplication;
 import uk.ac.manchester.rcs.corypha.core.CoryphaModule;
 import uk.ac.manchester.rcs.corypha.core.CoryphaTemplateUtil;
+import uk.ac.manchester.rcs.corypha.core.HibernateFilter;
 import uk.ac.manchester.rcs.corypha.core.IApplicationProvider;
 import uk.ac.manchester.rcs.corypha.core.IMenuProvider;
 import freemarker.cache.ClassTemplateLoader;
@@ -65,6 +66,7 @@ import freemarker.template.Configuration;
  */
 public class WebidModule extends CoryphaModule implements IApplicationProvider,
         IMenuProvider {
+    @SuppressWarnings("unused")
     private final static Logger LOGGER = LoggerFactory
             .getLogger(WebidModule.class);
 
@@ -77,8 +79,10 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
     public static final String ITEMS_PATHELEMENT = "items";
     public static final String MAIN_ID_ATTRIBUTE = "uk.ac.nanocmos.datamanagement.service.attr.main_id";
     public static final String MINICA_CONFIGURATION_CTXATTR_NAME = "uk.ac.manchester.rcs.foafssl.minicaconfig";
-    public static final String SESAME_REPOSITORY_CTXATTR_NAME = "uk.ac.manchester.rcs.foafssl.sesamerepo";
-    public static final String SESAME_MEMORYSTORE_DIR_CTXPARAM_NAME = "uk.ac.manchester.rcs.foafssl.sesame-memorystore-file";
+
+    public static final String FOAFDIRECTORY_SESAME_REPOSITORY_ATTRIBUTE = "uk.ac.manchester.rcs.foafssl.sesame_repository";
+    public static final String FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE = "uk.ac.manchester.rcs.foafssl.hibernate.factory";
+    public static final String FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE = "uk.ac.manchester.rcs.foafssl.hibernate.session";
 
     public final static String FOAF_NS = "http://xmlns.com/foaf/0.1/";
     public final static String FOAFSSLMANCHESTER_NS = "http://www.rcs.manchester.ac.uk/research/FoafSslShib/#";
@@ -110,39 +114,24 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
                 getContext().getAttributes().put(
                         MINICA_CONFIGURATION_CTXATTR_NAME, miniCaConfiguration);
 
-                Sail sail = null;
-                String sailLoaderName = getContext().getParameters()
-                        .getFirstValue("sail_loader");
-                if (sailLoaderName != null) {
-                    try {
-                        Class<?> oracleSailLoaderClass = Class
-                                .forName(sailLoaderName);
-                        SailLoader sailLoader = (SailLoader) oracleSailLoaderClass
-                                .newInstance();
-                        sail = sailLoader.loadSail(getContext());
-                    } catch (Exception e) {
-                        String errorMsg = String
-                                .format("Unable to load SailLoader %s.",
-                                        sailLoaderName);
-                        LOGGER.error(errorMsg, e);
-                        throw new RuntimeException(errorMsg, e);
-                    }
-                } else {
-                    String memoryStoreFile = getContext()
-                            .getParameters()
-                            .getFirstValue(SESAME_MEMORYSTORE_DIR_CTXPARAM_NAME);
-                    if (memoryStoreFile != null) {
-                        File dataDir = new File(memoryStoreFile);
-                        sail = new MemoryStore(dataDir);
-                    } else {
-                        sail = new MemoryStore();
-                    }
-                }
-                Repository repository = new SailRepository(sail);
-                repository.initialize();
-
+                AnnotationConfiguration configuration = new AnnotationConfiguration()
+                        .addPackage(
+                                "uk.ac.manchester.rcs.bruno.webidrepository")
+                        .addAnnotatedClass(RdfDocumentContainer.class);
+                configuration.setProperty("hibernate.connection.datasource",
+                        "java:comp/env/jdbc/webiddirectoryDS");
+                configuration.setProperty("hibernate.show_sql", "true");
+                configuration.setProperty("hibernate.hbm2ddl.auto", "update");
+                SessionFactory sessionFactory = configuration
+                        .buildSessionFactory();
                 getContext().getAttributes().put(
-                        SESAME_REPOSITORY_CTXATTR_NAME, repository);
+                        FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
+                        sessionFactory);
+
+                Repository repository = new SailRepository(new MemoryStore());
+                repository.initialize();
+                getContext().getAttributes().put(
+                        FOAFDIRECTORY_SESAME_REPOSITORY_ATTRIBUTE, repository);
 
                 Configuration cfg = CoryphaTemplateUtil
                         .getConfiguration(getContext());
@@ -161,10 +150,15 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
                 router.attachDefault(WebidCreationPageResource.class);
                 router.setDefaultMatchingQuery(false);
 
-                return router;
-            } catch (RepositoryException e) {
-                throw new RuntimeException(e);
+                HibernateFilter hibernateFilter = new HibernateFilter(
+                        getContext(), router,
+                        FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
+                        FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE);
+
+                return hibernateFilter;
             } catch (ConfigurationException e) {
+                throw new RuntimeException(e);
+            } catch (RepositoryException e) {
                 throw new RuntimeException(e);
             }
         }

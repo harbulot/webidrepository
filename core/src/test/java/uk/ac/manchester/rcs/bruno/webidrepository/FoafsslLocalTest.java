@@ -30,6 +30,7 @@ POSSIBILITY OF SUCH DAMAGE.
 -----------------------------------------------------------------------*/
 package uk.ac.manchester.rcs.bruno.webidrepository;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -38,6 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 
+import org.apache.derby.jdbc.EmbeddedDataSource;
 import org.ini4j.Ini;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Profile.Section;
@@ -47,7 +49,6 @@ import org.restlet.Context;
 import org.restlet.Server;
 import org.restlet.data.Protocol;
 
-import uk.ac.manchester.rcs.bruno.webidrepository.WebidModule;
 import uk.ac.manchester.rcs.corypha.core.CoryphaRootApplication;
 import uk.ac.manchester.rcs.corypha.core.CoryphaTemplateUtil;
 
@@ -86,8 +87,11 @@ public class FoafsslLocalTest {
         Server server = component.getServers().add(Protocol.HTTPS, 8183);
         component.getClients().add(Protocol.CLAP);
 
-        KeyStore keyStore = KeyStore.getInstance("KeychainStore");
-        keyStore.load(null, "-".toCharArray());
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        InputStream is = new FileInputStream(
+                "/home/bruno/eclipse-3.5/workspace/jsslutils/trunk/certificates/src/main/resources/org/jsslutils/certificates/local/localhost.p12");
+        keyStore.load(is, "testtest".toCharArray());
+        is.close();
 
         System.setProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY,
                 "org.mortbay.naming.InitialContextFactory");
@@ -100,24 +104,37 @@ public class FoafsslLocalTest {
             } catch (NameNotFoundException e) {
                 ctx = ctx.createSubcontext("env");
             }
+            javax.naming.Context envCtx = ctx;
             try {
-                ctx = (javax.naming.Context) ctx.lookup("foafdirectory");
+                ctx = (javax.naming.Context) envCtx.lookup("webiddirectory");
             } catch (NameNotFoundException e) {
-                ctx = ctx.createSubcontext("foafdirectory");
+                ctx = envCtx.createSubcontext("webiddirectory");
             }
             ctx.rebind("signingKeyStore", keyStore);
-            ctx.rebind("signingKeyPasswordArray", "-".toCharArray());
-            ctx.rebind("issuerName", "CN=test");
+
+            try {
+                ctx = (javax.naming.Context) envCtx.lookup("jdbc");
+            } catch (NameNotFoundException e) {
+                ctx = envCtx.createSubcontext("jdbc");
+            }
+            EmbeddedDataSource ds = new EmbeddedDataSource();
+            ds.setDatabaseName("target/testdb");
+            ds.setCreateDatabase("true");
+            ctx.rebind("webiddirectoryDS", ds);
         } finally {
             if (ctx != null) {
                 ctx.close();
             }
         }
 
-        server.getContext().getParameters().add("keystorePath", "NONE");
-        server.getContext().getParameters()
-                .add("keystoreType", "KeychainStore");
-        server.getContext().getParameters().add("keystorePassword", "-");
+        server
+                .getContext()
+                .getParameters()
+                .add(
+                        "keystorePath",
+                        "/home/bruno/eclipse-3.5/workspace/jsslutils/trunk/certificates/src/main/resources/org/jsslutils/certificates/local/localhost.p12");
+        server.getContext().getParameters().add("keystoreType", "PKCS12");
+        server.getContext().getParameters().add("keystorePassword", "testtest");
 
         CoryphaRootApplication cmsRootApplication = new CoryphaRootApplication();
         cmsRootApplication.setContext(component.getContext()
@@ -128,8 +145,9 @@ public class FoafsslLocalTest {
                 CoryphaRootApplication.MODULE_CLASSES_CTX_PARAM,
                 "uk.ac.manchester.rcs.bruno.webidrepository.WebidModule");
         cmsRootAppContext.getParameters().add(
-                WebidModule.SESAME_MEMORYSTORE_DIR_CTXPARAM_NAME,
-                "/tmp/sesametmp.1/");
+                "webiddirectory/signingKeyPassword", "testtest");
+        cmsRootAppContext.getParameters().add("webiddirectory/issuerName",
+                "CN=test");
 
         InputStream configIs = ClassLoader
                 .getSystemResourceAsStream("config.ini");

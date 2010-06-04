@@ -50,6 +50,8 @@ import org.apache.commons.logging.LogFactory;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.openssl.PEMWriter;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -64,6 +66,8 @@ import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.rdfxml.RDFXMLWriter;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.ext.freemarker.TemplateRepresentation;
@@ -78,6 +82,7 @@ import org.restlet.resource.ResourceException;
 import uk.ac.manchester.rcs.bruno.keygenapp.base.MiniCaCertGen;
 import uk.ac.manchester.rcs.bruno.keygenapp.base.MiniCaConfiguration;
 import uk.ac.manchester.rcs.corypha.core.CoryphaTemplateUtil;
+import uk.ac.manchester.rcs.corypha.core.HibernateFilter;
 
 /**
  * This is a resource class for the records.
@@ -86,7 +91,6 @@ import uk.ac.manchester.rcs.corypha.core.CoryphaTemplateUtil;
  * 
  */
 public class WebidPageResource extends SesameContextDocumentResource {
-    @SuppressWarnings("unused")
     private static final Log LOGGER = LogFactory
             .getLog(WebidPageResource.class);
 
@@ -102,7 +106,7 @@ public class WebidPageResource extends SesameContextDocumentResource {
 
     @Get("html")
     public Representation toHtml() {
-        String webId = context.stringValue() + "#me";
+        String webId = context + "#me";
 
         final RepositoryConnection repositoryConnection = this.repositoryConnection;
 
@@ -116,13 +120,12 @@ public class WebidPageResource extends SesameContextDocumentResource {
         queryStringBuilder.append("SELECT * ");
         queryStringBuilder.append(String.format("FROM <%s> ", context));
         queryStringBuilder.append("WHERE { ");
-        queryStringBuilder.append(String.format(
-                " <%s#me> rdf:type ?t . ", context));
+        queryStringBuilder.append(String.format(" <%s#me> rdf:type ?t . ",
+                context));
         queryStringBuilder.append(String.format(
                 " OPTIONAL { <%s#me> foaf:givenName ?givenName } . ", context));
-        queryStringBuilder
-                .append(String.format(
-                        " OPTIONAL { <%s#me> foaf:familyName ?familyName } . ",
+        queryStringBuilder.append(String
+                .format(" OPTIONAL { <%s#me> foaf:familyName ?familyName } . ",
                         context));
         queryStringBuilder.append(String.format(
                 " OPTIONAL { <%s#me> man:x509PemCert ?x509Cert } . ", context));
@@ -256,7 +259,7 @@ public class WebidPageResource extends SesameContextDocumentResource {
                                             .nextCertificateSerialNumber());
                         }
 
-                        final StringWriter sw = new StringWriter();
+                        StringWriter sw = new StringWriter();
                         PEMWriter pemWriter = new PEMWriter(sw);
                         pemWriter.writeObject(cert);
                         pemWriter.close();
@@ -332,6 +335,30 @@ public class WebidPageResource extends SesameContextDocumentResource {
                                     "public_exponent");
                             repositoryConnection.add(keyBnode, predicate,
                                     exponentBnode, context);
+                        }
+
+                        repositoryConnection.commit();
+
+                        try {
+                            sw = new StringWriter();
+                            RDFXMLWriter rdfXmlWriter = new RDFXMLWriter(sw);
+                            repositoryConnection.export(rdfXmlWriter, context);
+                            RdfDocumentContainer rdfDocContainer = new RdfDocumentContainer();
+                            rdfDocContainer.setId(context.toString());
+                            rdfDocContainer.setRdfContent(sw.toString());
+                            Session session = HibernateFilter
+                                    .getSession(
+                                            getContext(),
+                                            getRequest(),
+                                            true,
+                                            WebidModule.FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
+                                            WebidModule.FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE);
+                            session.saveOrUpdate(rdfDocContainer);
+                            session.getTransaction().commit();
+                        } catch (RDFHandlerException e) {
+                            throw new ResourceException(e);
+                        } catch (HibernateException e) {
+                            throw new ResourceException(e);
                         }
 
                         setExisting(true);

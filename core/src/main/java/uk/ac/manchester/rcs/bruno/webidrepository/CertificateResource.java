@@ -30,10 +30,12 @@ POSSIBILITY OF SUCH DAMAGE.
 -----------------------------------------------------------------------*/
 package uk.ac.manchester.rcs.bruno.webidrepository;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
@@ -41,6 +43,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PEMWriter;
+import org.hibernate.Session;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
@@ -52,6 +55,8 @@ import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFParseException;
 import org.restlet.data.MediaType;
 import org.restlet.representation.OutputRepresentation;
 import org.restlet.representation.Representation;
@@ -59,6 +64,8 @@ import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Get;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.ServerResource;
+
+import uk.ac.manchester.rcs.corypha.core.HibernateFilter;
 
 /**
  * This is a resource class for the records.
@@ -99,72 +106,94 @@ public class CertificateResource extends ServerResource {
         super.doInit();
         try {
             Repository repository = (Repository) getContext().getAttributes()
-                    .get(WebidModule.SESAME_REPOSITORY_CTXATTR_NAME);
+                    .get(WebidModule.FOAFDIRECTORY_SESAME_REPOSITORY_ATTRIBUTE);
+            this.repositoryConnection = repository.getConnection();
 
             String parentUri = getRequest().getResourceRef().getParentRef()
                     .toString();
             URI context = repository.getValueFactory().createURI(parentUri);
 
-            this.repositoryConnection = repository.getConnection();
+            Session session = HibernateFilter.getSession(getContext(),
+                    getRequest(), true,
+                    WebidModule.FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
+                    WebidModule.FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE);
+            RdfDocumentContainer foafDoc = (RdfDocumentContainer) session.get(
+                    RdfDocumentContainer.class, getRequest().getResourceRef()
+                            .toString());
 
-            final RepositoryConnection repositoryConnection = this.repositoryConnection;
+            if ((foafDoc != null) && (foafDoc.getRdfContent() != null)) {
 
-            StringBuilder queryStringBuilder = new StringBuilder();
-            queryStringBuilder.append("SELECT * ");
-            queryStringBuilder.append(String.format("FROM CONTEXT <%s> ",
-                    context));
-            queryStringBuilder.append(String.format(
-                    " {<%s#me>} rdf:type {foaf:Person}, ", context));
-            queryStringBuilder.append(String.format(
-                    " [{<%s#me>} man:x509PemCert {x509Cert}] ", context));
-            queryStringBuilder.append(String.format(
-                    "USING NAMESPACE foaf = <%s>, man = <%s>",
-                    WebidModule.FOAF_NS, WebidModule.FOAFSSLMANCHESTER_NS));
-            try {
-                TupleQuery tupleQuery = repositoryConnection.prepareTupleQuery(
-                        QueryLanguage.SERQL, queryStringBuilder.toString(),
-                        context.toString());
-                TupleQueryResult result = tupleQuery.evaluate();
-                if (result.hasNext()) {
-                    BindingSet bindingSet = result.next();
-                    Value x509Cert = bindingSet.getValue("x509Cert");
+                this.repositoryConnection.clear(context);
+                this.repositoryConnection.add(new ByteArrayInputStream(foafDoc
+                        .getRdfContent().getBytes(Charset.forName("UTF-8"))),
+                        context.toString(), RDFFormat.RDFXML, context);
 
-                    X509Certificate certificate = null;
+                setExisting(true);
 
-                    if (x509Cert != null) {
-                        PEMReader pemReader = new PEMReader(new StringReader(
-                                x509Cert.stringValue()));
-                        Object pemObject = pemReader.readObject();
-                        if (pemObject instanceof X509Certificate) {
-                            certificate = (X509Certificate) pemObject;
-                        } else {
-                            LOGGER
-                                    .warn(String
-                                            .format(
-                                                    "What was meant to be a PEM certificate could not be read by the PEMReader (found and instance of %s instead)",
-                                                    pemObject.getClass()
-                                                            .getName()));
+                StringBuilder queryStringBuilder = new StringBuilder();
+                queryStringBuilder.append("SELECT * ");
+                queryStringBuilder.append(String.format("FROM CONTEXT <%s> ",
+                        context));
+                queryStringBuilder.append(String.format(
+                        " {<%s#me>} rdf:type {foaf:Person}, ", context));
+                queryStringBuilder.append(String.format(
+                        " [{<%s#me>} man:x509PemCert {x509Cert}] ", context));
+                queryStringBuilder.append(String.format(
+                        "USING NAMESPACE foaf = <%s>, man = <%s>",
+                        WebidModule.FOAF_NS, WebidModule.FOAFSSLMANCHESTER_NS));
+                try {
+                    TupleQuery tupleQuery = repositoryConnection
+                            .prepareTupleQuery(QueryLanguage.SERQL,
+                                    queryStringBuilder.toString(), context
+                                            .toString());
+                    TupleQueryResult result = tupleQuery.evaluate();
+                    if (result.hasNext()) {
+                        BindingSet bindingSet = result.next();
+                        Value x509Cert = bindingSet.getValue("x509Cert");
+
+                        X509Certificate certificate = null;
+
+                        if (x509Cert != null) {
+                            PEMReader pemReader = new PEMReader(
+                                    new StringReader(x509Cert.stringValue()));
+                            Object pemObject = pemReader.readObject();
+                            if (pemObject instanceof X509Certificate) {
+                                certificate = (X509Certificate) pemObject;
+                            } else {
+                                LOGGER
+                                        .warn(String
+                                                .format(
+                                                        "What was meant to be a PEM certificate could not be read by the PEMReader (found and instance of %s instead)",
+                                                        pemObject.getClass()
+                                                                .getName()));
+                            }
+                            pemReader.close();
                         }
-                        pemReader.close();
-                    }
-                    if (certificate == null) {
-                        setExisting(false);
+                        if (certificate == null) {
+                            setExisting(false);
+                        } else {
+                            this.certificate = certificate;
+                        }
                     } else {
-                        this.certificate = certificate;
+                        setExisting(false);
                     }
-                } else {
-                    setExisting(false);
+                } catch (IOException e) {
+                    throw new ResourceException(e);
+                } finally {
+                    repositoryConnection.close();
                 }
-            } catch (IOException e) {
-                throw new ResourceException(e);
-            } finally {
-                repositoryConnection.close();
+            } else {
+                setExisting(false);
             }
         } catch (RepositoryException e) {
             throw new ResourceException(e);
         } catch (MalformedQueryException e) {
             throw new ResourceException(e);
         } catch (QueryEvaluationException e) {
+            throw new ResourceException(e);
+        } catch (RDFParseException e) {
+            throw new ResourceException(e);
+        } catch (IOException e) {
             throw new ResourceException(e);
         } finally {
             this.repositoryConnection = null;
