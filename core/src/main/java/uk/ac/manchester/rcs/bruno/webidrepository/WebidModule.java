@@ -177,11 +177,5 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
     public void configureHibernate(AnnotationConfiguration configuration) {
         configuration.addPackage("uk.ac.manchester.rcs.bruno.webidrepository")
                 .addAnnotatedClass(RdfDocumentContainer.class);
-        configuration.setProperty("hibernate.connection.datasource",
-                "java:comp/env/jdbc/webiddirectoryDS");
-        configuration.setProperty("hibernate.dialect",
-                "uk.ac.manchester.rcs.corypha.core.LobDerbyDialect");
-        configuration.setProperty("hibernate.show_sql", "true");
-        configuration.setProperty("hibernate.hbm2ddl.auto", "update");
     }
 }

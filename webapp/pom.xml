@@ -73,11 +73,6 @@
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>uk.ac.manchester.rcs.bruno.webidrepository</groupId>
-			<artifactId>webidrepository-oraclesail</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
 			<groupId>org.restlet.jee</groupId>
 			<artifactId>org.restlet.ext.servlet</artifactId>
 		</dependency>
