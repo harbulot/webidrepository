@@ -46,10 +46,8 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.rdfxml.RDFXMLWriter;
-import org.openrdf.sail.memory.MemoryStore;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
@@ -145,13 +143,8 @@ public class WebidCreationPageResource extends ServerResource {
                     RdfDocumentContainer rdfDocContainer = new RdfDocumentContainer();
                     rdfDocContainer.setId(context.toString());
                     rdfDocContainer.setRdfContent(sw.toString());
-                    Session session = HibernateFilter
-                            .getSession(
-                                    getContext(),
-                                    getRequest(),
-                                    true,
-                                    WebidModule.FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
-                                    WebidModule.FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE);
+                    Session session = HibernateFilter.getSession(getContext(),
+                            getRequest());
                     session.saveOrUpdate(rdfDocContainer);
                     session.getTransaction().commit();
                 } catch (RDFHandlerException e) {
@@ -172,7 +165,6 @@ public class WebidCreationPageResource extends ServerResource {
                         MediaType.TEXT_HTML);
             } finally {
                 conn.close();
-                repository.shutDown();
             }
         } catch (RepositoryException e) {
             throw new ResourceException(e);

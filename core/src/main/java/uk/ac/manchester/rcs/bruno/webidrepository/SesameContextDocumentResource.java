@@ -68,20 +68,20 @@ public class SesameContextDocumentResource extends ServerResource {
 
     protected URI context;
     protected RepositoryConnection repositoryConnection;
+    protected RdfDocumentContainer rdfDocContainer;
 
     @Override
     protected void doInit() throws ResourceException {
         super.doInit();
 
-        Session session = HibernateFilter.getSession(getContext(),
-                getRequest(), true,
-                WebidModule.FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
-                WebidModule.FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE);
-        RdfDocumentContainer foafDoc = (RdfDocumentContainer) session.get(
+        Session session = HibernateFilter
+                .getSession(getContext(), getRequest());
+        rdfDocContainer = (RdfDocumentContainer) session.get(
                 RdfDocumentContainer.class, getRequest().getResourceRef()
                         .toString());
 
-        if ((foafDoc != null) && (foafDoc.getRdfContent() != null)) {
+        if ((rdfDocContainer != null)
+                && (rdfDocContainer.getRdfContent() != null)) {
             setExisting(true);
             Repository repository = (Repository) getContext().getAttributes()
                     .get(WebidModule.FOAFDIRECTORY_SESAME_REPOSITORY_ATTRIBUTE);
@@ -95,11 +95,10 @@ public class SesameContextDocumentResource extends ServerResource {
                 }
 
                 this.repositoryConnection.clear(this.context);
-                this.repositoryConnection
-                        .add(new ByteArrayInputStream(foafDoc.getRdfContent()
-                                .getBytes(Charset.forName("UTF-8"))),
-                                this.context.toString(), RDFFormat.RDFXML,
-                                this.context);
+                this.repositoryConnection.add(new ByteArrayInputStream(
+                        rdfDocContainer.getRdfContent().getBytes(
+                                Charset.forName("UTF-8"))), this.context
+                        .toString(), RDFFormat.RDFXML, this.context);
             } catch (RepositoryException e) {
                 throw new ResourceException(e);
             } catch (RDFParseException e) {

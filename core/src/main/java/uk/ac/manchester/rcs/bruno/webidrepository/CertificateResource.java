@@ -114,15 +114,11 @@ public class CertificateResource extends ServerResource {
             URI context = repository.getValueFactory().createURI(parentUri);
 
             Session session = HibernateFilter.getSession(getContext(),
-                    getRequest(), true,
-                    WebidModule.FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
-                    WebidModule.FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE);
+                    getRequest());
             RdfDocumentContainer foafDoc = (RdfDocumentContainer) session.get(
-                    RdfDocumentContainer.class, getRequest().getResourceRef()
-                            .toString());
+                    RdfDocumentContainer.class, parentUri);
 
             if ((foafDoc != null) && (foafDoc.getRdfContent() != null)) {
-
                 this.repositoryConnection.clear(context);
                 this.repositoryConnection.add(new ByteArrayInputStream(foafDoc
                         .getRdfContent().getBytes(Charset.forName("UTF-8"))),

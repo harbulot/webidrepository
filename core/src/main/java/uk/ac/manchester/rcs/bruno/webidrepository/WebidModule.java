@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.hibernate.SessionFactory;
 import org.hibernate.cfg.AnnotationConfiguration;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
@@ -56,6 +55,7 @@ import uk.ac.manchester.rcs.corypha.core.CoryphaModule;
 import uk.ac.manchester.rcs.corypha.core.CoryphaTemplateUtil;
 import uk.ac.manchester.rcs.corypha.core.HibernateFilter;
 import uk.ac.manchester.rcs.corypha.core.IApplicationProvider;
+import uk.ac.manchester.rcs.corypha.core.IHibernateConfigurationContributor;
 import uk.ac.manchester.rcs.corypha.core.IMenuProvider;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
@@ -65,7 +65,7 @@ import freemarker.template.Configuration;
  * 
  */
 public class WebidModule extends CoryphaModule implements IApplicationProvider,
-        IMenuProvider {
+        IMenuProvider, IHibernateConfigurationContributor {
     @SuppressWarnings("unused")
     private final static Logger LOGGER = LoggerFactory
             .getLogger(WebidModule.class);
@@ -81,8 +81,6 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
     public static final String MINICA_CONFIGURATION_CTXATTR_NAME = "uk.ac.manchester.rcs.foafssl.minicaconfig";
 
     public static final String FOAFDIRECTORY_SESAME_REPOSITORY_ATTRIBUTE = "uk.ac.manchester.rcs.foafssl.sesame_repository";
-    public static final String FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE = "uk.ac.manchester.rcs.foafssl.hibernate.factory";
-    public static final String FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE = "uk.ac.manchester.rcs.foafssl.hibernate.session";
 
     public final static String FOAF_NS = "http://xmlns.com/foaf/0.1/";
     public final static String FOAFSSLMANCHESTER_NS = "http://www.rcs.manchester.ac.uk/research/FoafSslShib/#";
@@ -114,20 +112,6 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
                 getContext().getAttributes().put(
                         MINICA_CONFIGURATION_CTXATTR_NAME, miniCaConfiguration);
 
-                AnnotationConfiguration configuration = new AnnotationConfiguration()
-                        .addPackage(
-                                "uk.ac.manchester.rcs.bruno.webidrepository")
-                        .addAnnotatedClass(RdfDocumentContainer.class);
-                configuration.setProperty("hibernate.connection.datasource",
-                        "java:comp/env/jdbc/webiddirectoryDS");
-                configuration.setProperty("hibernate.show_sql", "true");
-                configuration.setProperty("hibernate.hbm2ddl.auto", "update");
-                SessionFactory sessionFactory = configuration
-                        .buildSessionFactory();
-                getContext().getAttributes().put(
-                        FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
-                        sessionFactory);
-
                 Repository repository = new SailRepository(new MemoryStore());
                 repository.initialize();
                 getContext().getAttributes().put(
@@ -151,9 +135,7 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
                 router.setDefaultMatchingQuery(false);
 
                 HibernateFilter hibernateFilter = new HibernateFilter(
-                        getContext(), router,
-                        FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
-                        FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE);
+                        getContext(), router);
 
                 return hibernateFilter;
             } catch (ConfigurationException e) {
@@ -189,5 +171,17 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
     @Override
     public List<MenuItem> getMenuItems() {
         return menuItems;
+    }
+
+    @Override
+    public void configureHibernate(AnnotationConfiguration configuration) {
+        configuration.addPackage("uk.ac.manchester.rcs.bruno.webidrepository")
+                .addAnnotatedClass(RdfDocumentContainer.class);
+        configuration.setProperty("hibernate.connection.datasource",
+                "java:comp/env/jdbc/webiddirectoryDS");
+        configuration.setProperty("hibernate.dialect",
+                "uk.ac.manchester.rcs.corypha.core.LobDerbyDialect");
+        configuration.setProperty("hibernate.show_sql", "true");
+        configuration.setProperty("hibernate.hbm2ddl.auto", "update");
     }
 }

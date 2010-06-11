@@ -343,16 +343,18 @@ public class WebidPageResource extends SesameContextDocumentResource {
                             sw = new StringWriter();
                             RDFXMLWriter rdfXmlWriter = new RDFXMLWriter(sw);
                             repositoryConnection.export(rdfXmlWriter, context);
-                            RdfDocumentContainer rdfDocContainer = new RdfDocumentContainer();
-                            rdfDocContainer.setId(context.toString());
+                            RdfDocumentContainer rdfDocContainer = this.rdfDocContainer;
+                            if ((rdfDocContainer.getId() == null)
+                                    || (!rdfDocContainer.getId().equals(context
+                                            .toString()))) {
+                                rdfDocContainer = new RdfDocumentContainer();
+                                rdfDocContainer.setId(context.toString());
+                                LOGGER
+                                        .warn("Mismatch between RdfDocumentContainer IDs, this should not happen!");
+                            }
                             rdfDocContainer.setRdfContent(sw.toString());
-                            Session session = HibernateFilter
-                                    .getSession(
-                                            getContext(),
-                                            getRequest(),
-                                            true,
-                                            WebidModule.FOAFDIRECTORY_HIBERNATE_FACTORY_ATTRIBUTE,
-                                            WebidModule.FOAFDIRECTORY_HIBERNATE_SESSION_ATTRIBUTE);
+                            Session session = HibernateFilter.getSession(
+                                    getContext(), getRequest());
                             session.saveOrUpdate(rdfDocContainer);
                             session.getTransaction().commit();
                         } catch (RDFHandlerException e) {
