@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+	<!--
+		log4j.rootCategory=INFO,CONSOLE #,ECLIPSE,JDBC
+
+		log4j.appender.ECLIPSE=org.apache.log4j.net.SocketAppender
+		log4j.appender.ECLIPSE.remoteHost=localhost
+		log4j.appender.ECLIPSE.port=4445
+		log4j.appender.ECLIPSE.locationInfo=true
+
+		log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
+		log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
+		log4j.appender.CONSOLE.layout.ConversionPattern=%p: %m%n
+
+		log4j.appender.JDBC=org.apache.log4j.jdbcplus.JDBCAppender
+		log4j.appender.JDBC.url=jdbc:mysql://localhost/test3
+		log4j.appender.JDBC.dbclass=com.mysql.jdbc.Driver
+		log4j.appender.JDBC.username=test3 log4j.appender.JDBC.password=test3
+		log4j.appender.JDBC.sql=INSERT INTO LOGS (Inc, Priority, Category,
+		Thread, Message, Throwable, Date, Creator) VALUES (@INC@, '@PRIO@',
+		'@CAT@', '@THREAD@', '@MSG@', '@THROWABLE@', '@TIMESTAMP@',
+		'testonmac') log4j.appender.JDBC.layout=org.apache.log4j.PatternLayout
+		# conversion pattern with 4 parts separated by #, second is empty
+		log4j.appender.JDBC.layout.ConversionPattern=[%t] %m
+		%l##%d{dd.MM.yyyy}#%d{HH:mm:ss}
+		log4j.appender.JDBC.layoutPartsDelimiter=#
+		log4j.appender.JDBC.buffer=1 #log4j.appender.JDBC.commit=true
+		log4j.appender.JDBC.quoteReplace=true
+		log4j.appender.JDBC.throwableMaxChars=3000 #log4j.logger.gsi.=DEBUG
+		log4j.logger.uk.ac.nanocmos=DEBUG
+		log4j.logger.uk.ac.nanocmos.datamanagement.service.resources=DEBUG
+		log4j.logger.uk.ac.manchester.rcs=DEBUG
+	-->
+	<appender name="console" class="org.apache.log4j.ConsoleAppender">
+		<param name="Target" value="System.err" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%p: %m%n" />
+		</layout>
+	</appender>
+
+	<!--
+		- -> <appender name="jdbc"
+		class="org.apache.log4j.jdbcplus.JDBCAppender">
+		<url>jdbc:mysql://localhost/test3</url>
+		<dbclass>com.mysql.jdbc.Driver</dbclass> <username>test3</username>
+		<password>test3</password> <sql>INSERT INTO LOGS (Inc, Priority,
+		Category, Thread, Message, Throwable, Date, Creator) VALUES (@INC@,
+		'@PRIO@', '@CAT@', '@THREAD@', '@MSG@', '@THROWABLE@', '@TIMESTAMP@',
+		'testonmac')</sql> <layout class="org.apache.log4j.PatternLayout">
+		<param name="ConversionPattern" value="[%t] %m
+		%l##%d{dd.MM.yyyy}#%d{HH:mm:ss}" /> </layout>
+		<layoutPartsDelimiter>#</layoutPartsDelimiter> <buffer>1</buffer> <!-
+		- <commit>true</commit> - -> <quoteReplace>true</quoteReplace>
+		<throwableMaxChars>3000</throwableMaxChars> </appender> <!- -
+	-->
+
+	<category name="uk.ac.nanocmos">
+		<priority value="debug" />
+	</category>
+	<category name="uk.ac.manchester.rcs">
+		<priority value="debug" />
+	</category>
+
+	<root>
+		<priority value="debug" />
+		<appender-ref ref="console" />
+	</root>
+</log4j:configuration>
