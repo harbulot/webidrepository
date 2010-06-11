@@ -200,7 +200,6 @@
 
 	<modules>
 		<module>core</module>
-		<module>oraclesail</module>
 		<module>webapp</module>
 	</modules>
 
