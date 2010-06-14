@@ -107,7 +107,7 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
                 getTunnelService().setExtensionsTunnel(true);
 
                 MiniCaConfiguration miniCaConfiguration = new MiniCaConfiguration();
-                miniCaConfiguration.init(getContext());
+                miniCaConfiguration.init();
 
                 getContext().getAttributes().put(
                         MINICA_CONFIGURATION_CTXATTR_NAME, miniCaConfiguration);

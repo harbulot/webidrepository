@@ -42,6 +42,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -56,6 +57,7 @@ import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  * This class initialises the configuration of the "Mini CA" from servlet
@@ -65,6 +67,12 @@ import org.bouncycastle.asn1.x509.X509Name;
  * 
  */
 public class MiniCaConfiguration {
+    static {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+    }
+
     public static Logger LOG = Logger.getLogger(MiniCaConfiguration.class
             .getCanonicalName());
 
@@ -73,14 +81,14 @@ public class MiniCaConfiguration {
 
     public final static String KEYSTORE_JNDI_NAME = "webiddirectory/signingKeyStore";
 
-    public final static String KEYSTORE_RESOURCE_PATH_INITPARAM = "webiddirectory/signingKeystoreResourcePath";
-    public final static String KEYSTORE_PATH_INITPARAM = "webiddirectory/signingKeystorePath";
-    public final static String KEYSTORE_TYPE_INITPARAM = "webiddirectory/signingKeystoreType";
-    public final static String KEYSTORE_PASSWORD_INITPARAM = "webiddirectory/signingKeystorePassword";
-    public final static String KEY_PASSWORD_INITPARAM = "webiddirectory/signingKeyPassword";
-    public final static String ALIAS_INITPARAM = "webiddirectory/signingKeyAlias";
+    public final static String KEYSTORE_RESOURCE_PATH_JNDI_NAME = "webiddirectory/signingKeystoreResourcePath";
+    public final static String KEYSTORE_PATH_JNDI_NAME = "webiddirectory/signingKeystorePath";
+    public final static String KEYSTORE_TYPE_JNDI_NAME = "webiddirectory/signingKeystoreType";
+    public final static String KEYSTORE_PASSWORD_JNDI_NAME = "webiddirectory/signingKeystorePassword";
+    public final static String KEY_PASSWORD_JNDI_NAME = "webiddirectory/signingKeyPassword";
+    public final static String ALIAS_JNDI_NAME = "webiddirectory/signingKeyAlias";
 
-    public static final String ISSUER_NAME_INITPARAM = "webiddirectory/issuerName";
+    public static final String ISSUER_NAME_JNDI_NAME = "webiddirectory/issuerName";
 
     private PrivateKey caPrivKey;
     private X509Certificate caCertificate;
@@ -128,39 +136,31 @@ public class MiniCaConfiguration {
         return new BigInteger(randomBytes);
     }
 
+    private Object loadJndiValue(Context ctx, String jndiName)
+            throws NamingException {
+        try {
+            return ctx.lookup(jndiName);
+        } catch (NameNotFoundException e) {
+            LOG.log(Level.FINE, String.format("JNDI name not found (%s).",
+                    jndiName), e);
+        }
+        return null;
+    }
+
     /**
      * Initialises the servlet: loads the keystore/keys to use to sign the
      * assertions and the issuer name.
      */
-    public void init(org.restlet.Context context) throws ConfigurationException {
+    public void init() throws ConfigurationException {
         KeyStore keyStore = null;
 
-        String keystoreResourcePath = context.getParameters().getFirstValue(
-                KEYSTORE_RESOURCE_PATH_INITPARAM);
-        String keystorePath = context.getParameters().getFirstValue(
-                KEYSTORE_PATH_INITPARAM);
-        String keystoreType = context.getParameters().getFirstValue(
-                KEYSTORE_TYPE_INITPARAM);
+        String keystoreResourcePath = null;
+        String keystorePath = null;
+        String keystoreType = null;
         char[] keystorePasswordArray = null;
         char[] keyPasswordArray = null;
-        {
-            String keystorePassword = context.getParameters().getFirstValue(
-                    KEYSTORE_PASSWORD_INITPARAM);
-            if (keystorePassword != null) {
-                keystorePasswordArray = keystorePassword.toCharArray();
-            }
-            String keyPassword = context.getParameters().getFirstValue(
-                    KEY_PASSWORD_INITPARAM);
-            if (keyPassword != null) {
-                keyPasswordArray = keyPassword.toCharArray();
-            } else {
-                keyPasswordArray = keystorePasswordArray;
-            }
-        }
-        String alias = context.getParameters().getFirstValue(ALIAS_INITPARAM);
-
-        String issuerName = context.getParameters().getFirstValue(
-                ISSUER_NAME_INITPARAM);
+        String alias = null;
+        String issuerName = null;
 
         X509Certificate certificate = null;
         PrivateKey privateKey = null;
@@ -169,24 +169,41 @@ public class MiniCaConfiguration {
             Context initCtx = new InitialContext();
             Context ctx = (Context) initCtx.lookup("java:comp/env");
             try {
-                try {
-                    certificate = (X509Certificate) ctx
-                            .lookup(CERTIFICATE_JNDI_NAME);
-                } catch (NameNotFoundException e) {
-                    LOG.log(Level.FINE, "JNDI name not found", e);
+                keystoreResourcePath = (String) loadJndiValue(ctx,
+                        KEYSTORE_RESOURCE_PATH_JNDI_NAME);
+
+                keystorePath = (String) loadJndiValue(ctx,
+                        KEYSTORE_PATH_JNDI_NAME);
+
+                keystoreType = (String) loadJndiValue(ctx,
+                        KEYSTORE_TYPE_JNDI_NAME);
+
+                String keystorePassword = (String) loadJndiValue(ctx,
+                        KEYSTORE_PASSWORD_JNDI_NAME);
+                if (keystorePassword != null) {
+                    keystorePasswordArray = keystorePassword.toCharArray();
+                }
+                String keyPassword = (String) loadJndiValue(ctx,
+                        KEY_PASSWORD_JNDI_NAME);
+                if (keyPassword != null) {
+                    keyPasswordArray = keyPassword.toCharArray();
+                } else {
+                    keyPasswordArray = keystorePasswordArray;
                 }
 
-                try {
-                    privateKey = (PrivateKey) ctx.lookup(PRIVATEKEY_JNDI_NAME);
-                } catch (NameNotFoundException e) {
-                    LOG.log(Level.FINE, "JNDI name not found", e);
-                }
+                alias = (String) loadJndiValue(ctx, ALIAS_JNDI_NAME);
+                issuerName = (String) loadJndiValue(ctx, ISSUER_NAME_JNDI_NAME);
 
-                try {
-                    keyStore = (KeyStore) ctx.lookup(KEYSTORE_JNDI_NAME);
-                } catch (NameNotFoundException e) {
-                    LOG.log(Level.FINE, "JNDI name not found", e);
-                }
+                keystoreType = (String) loadJndiValue(ctx,
+                        KEYSTORE_TYPE_JNDI_NAME);
+
+                certificate = (X509Certificate) loadJndiValue(ctx,
+                        CERTIFICATE_JNDI_NAME);
+
+                privateKey = (PrivateKey) loadJndiValue(ctx,
+                        PRIVATEKEY_JNDI_NAME);
+
+                keyStore = (KeyStore) loadJndiValue(ctx, KEYSTORE_JNDI_NAME);
             } finally {
                 try {
                     try {
@@ -282,6 +299,9 @@ public class MiniCaConfiguration {
                             break;
                         }
                     }
+                    LOG.log(Level.INFO,
+                            "Loading certificate from keystore with alias: "
+                                    + alias);
                 }
                 if (alias == null) {
                     LOG
@@ -317,6 +337,12 @@ public class MiniCaConfiguration {
                         e);
                 throw new ConfigurationException("Could not load keystore.");
             }
+        }
+
+        if ((certificate == null) || (privateKey == null)) {
+            LOG.log(Level.SEVERE, "Unable to load certificate or private key.");
+            throw new ConfigurationException(
+                    "Unable to load certificate or private key.");
         }
 
         setCaCertificate(certificate);

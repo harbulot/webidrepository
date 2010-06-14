@@ -94,7 +94,7 @@ public class FoafsslLocalTest {
         is.close();
 
         System.setProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY,
-                "org.mortbay.naming.InitialContextFactory");
+                org.eclipse.jetty.jndi.InitialContextFactory.class.getName());
         javax.naming.Context ctx = null;
         try {
             ctx = (javax.naming.Context) new InitialContext()

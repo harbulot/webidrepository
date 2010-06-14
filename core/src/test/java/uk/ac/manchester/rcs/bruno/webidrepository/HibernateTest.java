@@ -86,7 +86,7 @@ public class HibernateTest {
     @Test
     public void testDataSource() throws Exception {
         System.setProperty(javax.naming.Context.INITIAL_CONTEXT_FACTORY,
-                "org.mortbay.naming.InitialContextFactory");
+                org.eclipse.jetty.jndi.InitialContextFactory.class.getName());
 
         Context ctx = null;
         try {
