@@ -7,7 +7,7 @@
 	<packaging>pom</packaging>
 	<properties>
 		<build.compiler.fork>true</build.compiler.fork>
-		<restlet.version>2.0-RC3</restlet.version>
+		<restlet.version>2.0-RC4</restlet.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<sesame.version>2.3.1</sesame.version>
 		<webidrepository.version>0.0.1-SNAPSHOT</webidrepository.version>
@@ -208,7 +208,7 @@
 			<dependency>
 				<groupId>uk.ac.manchester.rcs.corypha</groupId>
 				<artifactId>corypha-core</artifactId>
-				<version>0.0.1-SNAPSHOT</version>
+				<version>0.0.1</version>
 			</dependency>
 
 			<!-- WedID Repository -->
