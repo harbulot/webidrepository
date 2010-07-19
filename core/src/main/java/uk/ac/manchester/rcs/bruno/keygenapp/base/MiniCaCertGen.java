@@ -206,7 +206,7 @@ public class MiniCaCertGen {
             GeneralNames subjectAltNames = new GeneralNames(new GeneralName(
                     GeneralName.uniformResourceIdentifier, subjAltNameURI));
             certGenerator.addExtension(X509Extensions.SubjectAlternativeName,
-                    true, subjectAltNames);
+                    false, subjectAltNames);
         }
 
         /*
