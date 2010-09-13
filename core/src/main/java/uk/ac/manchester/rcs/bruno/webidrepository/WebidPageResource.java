@@ -31,7 +31,6 @@ POSSIBILITY OF SUCH DAMAGE.
 package uk.ac.manchester.rcs.bruno.webidrepository;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.StringWriter;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -71,9 +70,7 @@ import org.openrdf.rio.rdfxml.RDFXMLWriter;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.ext.freemarker.TemplateRepresentation;
-import org.restlet.representation.OutputRepresentation;
 import org.restlet.representation.Representation;
-import org.restlet.representation.StringRepresentation;
 import org.restlet.representation.Variant;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
@@ -106,6 +103,10 @@ public class WebidPageResource extends SesameContextDocumentResource {
 
     @Get("html")
     public Representation toHtml() {
+        return toHtml(false);
+    }
+    
+    public Representation toHtml(boolean autoloadcert) {
         String webId = context + "#me";
 
         final RepositoryConnection repositoryConnection = this.repositoryConnection;
@@ -180,6 +181,7 @@ public class WebidPageResource extends SesameContextDocumentResource {
             data.put("foaf", this.foafsslData);
         }
         data.put("canModify", this.canModify);
+        data.put("autoloadcert", autoloadcert);
         return new TemplateRepresentation("foafprofile.ftl.html",
                 CoryphaTemplateUtil.getConfiguration(getContext()), data,
                 MediaType.TEXT_HTML);
@@ -240,8 +242,6 @@ public class WebidPageResource extends SesameContextDocumentResource {
                             subjectDn = new X509Name("CN=" + cn);
                         }
 
-                        Representation returnRep;
-
                         X509Certificate cert;
                         if ((spkacData == null) || spkacData.isEmpty()) {
                             cert = MiniCaCertGen.createCertFromPemCsr(
@@ -265,22 +265,6 @@ public class WebidPageResource extends SesameContextDocumentResource {
                         pemWriter.close();
                         String pemCert = sw.toString();
 
-                        if ((spkacData == null) || spkacData.isEmpty()) {
-                            returnRep = new StringRepresentation(pemCert,
-                                    MediaType.valueOf("application/x-pem-file"));
-                        } else {
-                            final byte[] encodedCert = cert.getEncoded();
-                            returnRep = new OutputRepresentation(MediaType
-                                    .valueOf("application/x-x509-user-cert"),
-                                    encodedCert.length) {
-
-                                @Override
-                                public void write(OutputStream out)
-                                        throws IOException {
-                                    out.write(encodedCert);
-                                }
-                            };
-                        }
                         ValueFactory vf = repositoryConnection
                                 .getValueFactory();
 
@@ -364,7 +348,7 @@ public class WebidPageResource extends SesameContextDocumentResource {
                         }
 
                         setExisting(true);
-                        return returnRep;
+                        return toHtml(true);
                     } else {
                         setExisting(true);
                         return get();

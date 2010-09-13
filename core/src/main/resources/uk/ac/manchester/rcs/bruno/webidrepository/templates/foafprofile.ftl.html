@@ -5,14 +5,9 @@
 $(document).ready(function() {
 	configurePage();
 	
-	if (navigator.appName != "Microsoft Internet Explorer") {
-		var newelem = $('<input type="button" />');
-		$("#keygensubmit").replaceWith(newelem);
-		newelem.attr('id','keygensubmitbutton');
-		$("#keygensubmitbutton").click(function() {
-			
-		});
-	}
+	<#if autoloadcert>
+	    window.location.href = window.location.href + "certificate.cer";
+	</#if>
 });
 </script>
 </@layout.head>
@@ -41,6 +36,9 @@ $(document).ready(function() {
 The following links will give you access to the certificate associated with this WebID in 
 <a href="certificate.crt">PEM format (text)</a> or <a href="certificate.cer">DER format (binary)</a>.
 <#else>
+<#if autoloadcert>
+   If the certificate hasn't been imported automatically, please click on the previous link (DER format for Firefox)
+</#if>
 <h2>This WebID hasn't been secured yet.</h2>
 <p>Please use the following form to create a certificate for you to claim this WebID.
 This will create a key-pair within your browser and import a certificate for this WebID.</p>
@@ -72,7 +70,7 @@ please avoid slashes or commas.</p>
 			challenge="TheChallenge1" /></td>
 	</tr>
 </table>
-<input id="keygensubmit" type="submit" /></form>
+<input id="keygensubmit" type="submit" value="Submit" /></form>
 </#if>
 </@layout.body>
 </html>
