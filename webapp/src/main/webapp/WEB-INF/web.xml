@@ -19,9 +19,9 @@
 	</context-param>
 
 	<env-entry>
-		<env-entry-name>parameters/corypha_config_ini_url</env-entry-name>
+		<env-entry-name>parameters/corypha_template_config_xml_url</env-entry-name>
 		<env-entry-type>java.lang.String</env-entry-type>
-		<env-entry-value>war:///WEB-INF/corypha.ini</env-entry-value>
+		<env-entry-value>war:///WEB-INF/corypha-template.cfg.xml</env-entry-value>
 	</env-entry>
 
 	<resource-ref>

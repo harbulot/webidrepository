@@ -1,9 +1,18 @@
 <#import "corelayout.ftl.html" as layout><html>
 <@layout.head "FOAF profile">
-<script type="text/javascript" src="../htdocs/crosskeygen.js">/**/</script>
+<script type="text/javascript" src="${baseurl!}htdocs/webid/crosskeygen.js">/**/</script>
 <script type="text/javascript">
 $(document).ready(function() {
 	configurePage();
+	
+	if (navigator.appName != "Microsoft Internet Explorer") {
+		var newelem = $('<input type="button" />');
+		$("#keygensubmit").replaceWith(newelem);
+		newelem.attr('id','keygensubmitbutton');
+		$("#keygensubmitbutton").click(function() {
+			
+		});
+	}
 });
 </script>
 </@layout.head>

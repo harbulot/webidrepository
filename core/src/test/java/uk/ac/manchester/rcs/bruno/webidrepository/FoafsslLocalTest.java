@@ -31,18 +31,13 @@ POSSIBILITY OF SUCH DAMAGE.
 package uk.ac.manchester.rcs.bruno.webidrepository;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 
 import org.apache.derby.jdbc.EmbeddedDataSource;
-import org.ini4j.Ini;
-import org.ini4j.InvalidFileFormatException;
-import org.ini4j.Profile.Section;
 import org.junit.Ignore;
 import org.restlet.Component;
 import org.restlet.Context;
@@ -50,10 +45,6 @@ import org.restlet.Server;
 import org.restlet.data.Protocol;
 
 import uk.ac.manchester.rcs.corypha.core.CoryphaRootApplication;
-import uk.ac.manchester.rcs.corypha.core.CoryphaTemplateUtil;
-
-import freemarker.template.Configuration;
-import freemarker.template.TemplateModelException;
 
 /**
  * @author Bruno Harbulot
@@ -61,27 +52,6 @@ import freemarker.template.TemplateModelException;
  */
 @Ignore
 public class FoafsslLocalTest {
-
-    private static void loadConfig(Context appContext, InputStream configIs)
-            throws InvalidFileFormatException, IOException,
-            TemplateModelException {
-        Ini ini = new Ini(configIs);
-
-        Configuration freemarkerConfig = CoryphaTemplateUtil
-                .getConfiguration(appContext);
-        freemarkerConfig.setSharedVariable("maintitle", ini.get("core",
-                "maintitle"));
-
-        Section iniSection = ini.get("sidenav");
-        CopyOnWriteArrayList<String> menuItemsHtml = new CopyOnWriteArrayList<String>();
-        for (String iniMenuItem : iniSection.getAll("item")) {
-            menuItemsHtml.add(iniMenuItem);
-        }
-        freemarkerConfig.setSharedVariable("sidemenuitems", menuItemsHtml);
-        freemarkerConfig.setSharedVariable("sidemenutitle", iniSection
-                .get("title"));
-    }
-
     public static void main(String[] args) throws Throwable {
         Component component = new Component();
         Server server = component.getServers().add(Protocol.HTTPS, 8183);
@@ -148,16 +118,6 @@ public class FoafsslLocalTest {
                 "webiddirectory/signingKeyPassword", "testtest");
         cmsRootAppContext.getParameters().add("webiddirectory/issuerName",
                 "CN=test");
-
-        InputStream configIs = ClassLoader
-                .getSystemResourceAsStream("config.ini");
-        try {
-            loadConfig(cmsRootAppContext, configIs);
-        } finally {
-            if (configIs != null) {
-                configIs.close();
-            }
-        }
 
         component.getDefaultHost().attachDefault(cmsRootApplication);
 

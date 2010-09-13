@@ -76,5 +76,32 @@
 			<groupId>org.restlet.jee</groupId>
 			<artifactId>org.restlet.ext.servlet</artifactId>
 		</dependency>
+				<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<exclusions>
+				<!--
+					needed to avoid endless recursion, per:
+					http://www.slf4j.org/legacy.html
+				-->
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-jdk14</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
+		</dependency>
 	</dependencies>
 </project>

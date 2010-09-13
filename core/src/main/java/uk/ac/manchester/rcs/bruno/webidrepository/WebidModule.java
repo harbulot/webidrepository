@@ -105,6 +105,7 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
 
                 getTunnelService().setEnabled(true);
                 getTunnelService().setExtensionsTunnel(true);
+                getTunnelService().setUserAgentTunnel(true);
 
                 MiniCaConfiguration miniCaConfiguration = new MiniCaConfiguration();
                 miniCaConfiguration.init();
@@ -153,7 +154,7 @@ public class WebidModule extends CoryphaModule implements IApplicationProvider,
         @Override
         public Restlet getHtdocsRestlet() {
             Directory htdocsDirectory = new Directory(getContext(),
-                    "clap://thread/uk/ac/manchester/rcs/bruno/webidrepository/htdocs");
+                    "clap://thread/uk/ac/manchester/rcs/bruno/webidrepository/htdocs/");
             return htdocsDirectory;
         }
     }
