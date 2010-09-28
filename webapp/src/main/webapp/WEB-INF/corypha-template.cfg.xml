@@ -1,0 +1,30 @@
+<?xml version="1.0"  encoding="ISO-8859-1"?>
+<!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://jetty.mortbay.org/configure.dtd">
+<Configure class="freemarker.template.Configuration">
+	<Call name="setSharedVariable">
+		<Arg>maintitle</Arg>
+		<Arg>WebID and FOAF+SSL hosting service</Arg>
+	</Call>
+
+	<Call name="setSharedVariable">
+		<Arg>sidemenutitle</Arg>
+		<Arg>About WebID and FOAF+SSL</Arg>
+	</Call>
+
+	<Call name="setSharedVariable">
+		<Arg>sidemenuitems</Arg>
+		<Arg>
+			<New class="java.util.concurrent.CopyOnWriteArrayList">
+				<Call name="add">
+					<Arg><![CDATA[<a href='http://esw.w3.org/Foaf%2Bssl'>FOAF+SSL on the W3C ESW Wiki</a>]]></Arg>
+				</Call>
+				<Call name="add">
+					<Arg><![CDATA[<a href='http://www.rcs.manchester.ac.uk/'>Research Computing Services at The University of Manchester</a>]]></Arg>
+				</Call>
+				<Call name="add">
+					<Arg><![CDATA[<a href='http://www.jisc.ac.uk/'>JISC</a>]]></Arg>
+				</Call>
+			</New>
+		</Arg>
+	</Call>
+</Configure>
