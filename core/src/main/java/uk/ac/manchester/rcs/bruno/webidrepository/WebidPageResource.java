@@ -69,7 +69,6 @@ import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.rdfxml.RDFXMLWriter;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.ext.freemarker.TemplateRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.representation.Variant;
 import org.restlet.resource.Get;
@@ -182,9 +181,9 @@ public class WebidPageResource extends SesameContextDocumentResource {
         }
         data.put("canModify", this.canModify);
         data.put("autoloadcert", autoloadcert);
-        return new TemplateRepresentation("foafprofile.ftl.html",
-                CoryphaTemplateUtil.getConfiguration(getContext()), data,
-                MediaType.TEXT_HTML);
+        return CoryphaTemplateUtil
+                .buildTemplateRepresentation(getContext(), getRequest(),
+                        "foafprofile.ftl.html", data, MediaType.TEXT_HTML);
     }
 
     @Post

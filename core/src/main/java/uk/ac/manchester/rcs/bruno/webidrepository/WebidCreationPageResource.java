@@ -51,7 +51,6 @@ import org.openrdf.rio.rdfxml.RDFXMLWriter;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
-import org.restlet.ext.freemarker.TemplateRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
@@ -90,8 +89,8 @@ public class WebidCreationPageResource extends ServerResource {
     @Get("html")
     public Representation toHtml() {
         HashMap<String, Object> data = new HashMap<String, Object>();
-        return new TemplateRepresentation("foafcreation.ftl.html",
-                CoryphaTemplateUtil.getConfiguration(getContext()), data,
+        return CoryphaTemplateUtil.buildTemplateRepresentation(getContext(),
+                getRequest(), "foafcreation.ftl.html", data,
                 MediaType.TEXT_HTML);
     }
 
@@ -156,12 +155,13 @@ public class WebidCreationPageResource extends ServerResource {
                 getResponse().redirectTemporary(context.toString());
                 getResponse().setStatus(Status.SUCCESS_CREATED);
 
-                HashMap<String, String> data = new HashMap<String, String>();
+                HashMap<String, Object> data = new HashMap<String, Object>();
                 data.put("redirect_url", getRequest().getResourceRef()
                         + "profile/" + localId);
-                return new TemplateRepresentation(
-                        "foafresourcecreated.ftl.html", CoryphaTemplateUtil
-                                .getConfiguration(getContext()), data,
+
+                return CoryphaTemplateUtil.buildTemplateRepresentation(
+                        getContext(), getRequest(),
+                        "foafresourcecreated.ftl.html", data,
                         MediaType.TEXT_HTML);
             } finally {
                 conn.close();
