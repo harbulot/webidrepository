@@ -4,11 +4,11 @@
 	<parent>
 		<groupId>uk.ac.manchester.rcs.bruno.webidrepository</groupId>
 		<artifactId>webidrepository</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
+		<version>0.0.1</version>
 		<relativePath>..</relativePath>
 	</parent>
 	<artifactId>webidrepository-webapp</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<packaging>war</packaging>
 
 	<profiles>
@@ -70,7 +70,7 @@
 		<dependency>
 			<groupId>uk.ac.manchester.rcs.bruno.webidrepository</groupId>
 			<artifactId>webidrepository-core</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.restlet.jee</groupId>
